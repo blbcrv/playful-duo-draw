@@ -15,7 +15,7 @@ const Index = () => {
 
   const handleAddParticipant = (name: string) => {
     const newParticipant: Participant = {
-      id: crypto.randomUUID(),
+      id: Math.floor(Math.random() * 1000),
       name,
     };
     setParticipants([...participants, newParticipant]);

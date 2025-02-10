@@ -6,16 +6,18 @@ import { PairReveal } from "@/components/PairReveal";
 import { Button } from "@/components/ui/button";
 import { Participant, ParticipantPair } from "@/types/participant";
 import { useToast } from "@/hooks/use-toast";
-import { Shuffle } from "lucide-react";
+import { Shuffle, Plus } from "lucide-react";
+import { motion } from "framer-motion";
 
 const Index = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [pairs, setPairs] = useState<ParticipantPair[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   const handleAddParticipant = (name: string) => {
     const newParticipant: Participant = {
-      id: Math.floor(Math.random() * 1000),
+      id: Math.random().toString(),
       name,
     };
     setParticipants([...participants, newParticipant]);
@@ -25,12 +27,24 @@ const Index = () => {
     });
   };
 
+  const handleAddJoker = () => {
+    const joker: Participant = {
+      id: "joker",
+      name: "Joker 🎭",
+    };
+    setParticipants([...participants, joker]);
+    toast({
+      title: "Joker ajouté",
+      description: "Un Joker a été ajouté pour équilibrer les duos",
+    });
+  };
+
   const handleRemoveParticipant = (id: string) => {
     setParticipants(participants.filter((p) => p.id !== id));
     setPairs([]);
   };
 
-  const generatePairs = () => {
+  const generatePairs = async () => {
     if (participants.length < 2) {
       toast({
         title: "Erreur",
@@ -40,30 +54,40 @@ const Index = () => {
       return;
     }
 
+    setIsGenerating(true);
+    setPairs([]);
+
+    // Ajouter un délai pour l'animation
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     const shuffled = [...participants].sort(() => Math.random() - 0.5);
     const newPairs: ParticipantPair[] = [];
 
     for (let i = 0; i < shuffled.length - 1; i += 2) {
       newPairs.push({
-        id: Math.floor(Math.random() * 1000),
+        id: Math.random().toString(),
         participant1: shuffled[i],
         participant2: shuffled[i + 1],
       });
     }
 
-    // If there's an odd number of participants, pair the last one with someone randomly
+    // Gestion du cas impair
     if (shuffled.length % 2 !== 0) {
-      const lastParticipant = shuffled[shuffled.length - 1];
-      const randomPairIndex = Math.floor(Math.random() * newPairs.length);
-      
-      newPairs.push({
-        id: Math.floor(Math.random() * 1000),
-        participant1: lastParticipant,
-        participant2: shuffled[0], // Pair with the first person
+      toast({
+        title: "Nombre impair de participants",
+        description: "Ajoutez un Joker pour équilibrer les duos",
+        action: (
+          <Button onClick={handleAddJoker} variant="outline" size="sm">
+            <Plus className="mr-2 h-4 w-4" />
+            Ajouter un Joker
+          </Button>
+        ),
       });
     }
 
     setPairs(newPairs);
+    setIsGenerating(false);
+    
     toast({
       title: "Duos générés",
       description: "Les duos ont été créés avec succès !",
@@ -73,23 +97,39 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-6">
       <div className="max-w-4xl mx-auto space-y-8">
-        <div className="text-center animate-fade-in">
-          <h1 className="text-4xl font-bold mb-2">Random Duo</h1>
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center"
+        >
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Random Duo
+          </h1>
           <p className="text-muted-foreground">
             Créez des duos aléatoires facilement et rapidement
           </p>
-        </div>
+        </motion.div>
 
-        <div className="glass-card rounded-lg p-6 space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-card rounded-lg p-6 space-y-6"
+        >
           <AddParticipantForm onAdd={handleAddParticipant} />
 
           <div className="space-y-3">
-            {participants.map((participant) => (
-              <ParticipantCard
+            {participants.map((participant, index) => (
+              <motion.div
                 key={participant.id}
-                participant={participant}
-                onRemove={handleRemoveParticipant}
-              />
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <ParticipantCard
+                  participant={participant}
+                  onRemove={handleRemoveParticipant}
+                />
+              </motion.div>
             ))}
           </div>
 
@@ -99,23 +139,35 @@ const Index = () => {
                 onClick={generatePairs}
                 size="lg"
                 className="animate-scale-in"
+                disabled={isGenerating}
               >
-                <Shuffle className="mr-2 h-4 w-4" />
-                Générer les duos
+                <Shuffle className={`mr-2 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
+                {isGenerating ? "Génération..." : "Générer les duos"}
               </Button>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {pairs.length > 0 && (
-          <div className="space-y-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
             <h2 className="text-2xl font-bold text-center">Duos générés</h2>
             <div className="grid gap-4 sm:grid-cols-2">
-              {pairs.map((pair) => (
-                <PairReveal key={pair.id} pair={pair} />
+              {pairs.map((pair, index) => (
+                <motion.div
+                  key={pair.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.2 }}
+                >
+                  <PairReveal pair={pair} />
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

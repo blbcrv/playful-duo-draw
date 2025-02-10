@@ -45,7 +45,7 @@ const Index = () => {
 
     for (let i = 0; i < shuffled.length - 1; i += 2) {
       newPairs.push({
-        id: crypto.randomUUID(),
+        id: Math.floor(Math.random() * 1000),
         participant1: shuffled[i],
         participant2: shuffled[i + 1],
       });
@@ -57,7 +57,7 @@ const Index = () => {
       const randomPairIndex = Math.floor(Math.random() * newPairs.length);
       
       newPairs.push({
-        id: crypto.randomUUID(),
+        id: Math.floor(Math.random() * 1000),
         participant1: lastParticipant,
         participant2: shuffled[0], // Pair with the first person
       });
